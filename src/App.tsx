@@ -169,6 +169,36 @@ export default function App() {
           setMessages(prev => prev.map(m => m.id === data.id ? { ...m, ack: data.ack } : m));
         });
       }
+
+      if (window.electronAPI.onWhatsAppMessageReaction) {
+        window.electronAPI.onWhatsAppMessageReaction((data: { messageId: string, reaction: string, senderId: string }) => {
+          setMessages(prev => prev.map(m => {
+            if (m.id === data.messageId) {
+              const currentReactions = m.reactions || [];
+              let newReactions = [...currentReactions];
+              
+              // Remove old reaction from this sender across all emojis
+              newReactions = newReactions.map(r => ({
+                ...r,
+                senders: r.senders?.filter((s: string) => s !== data.senderId) || [],
+                aggregate: (r.senders?.filter((s: string) => s !== data.senderId) || []).length
+              })).filter(r => r.aggregate > 0);
+
+              if (data.reaction !== '') {
+                const existingIdx = newReactions.findIndex(r => r.reaction === data.reaction);
+                if (existingIdx >= 0) {
+                  newReactions[existingIdx].senders.push(data.senderId);
+                  newReactions[existingIdx].aggregate++;
+                } else {
+                  newReactions.push({ aggregate: 1, reaction: data.reaction, senders: [data.senderId] });
+                }
+              }
+              return { ...m, reactions: newReactions };
+            }
+            return m;
+          }));
+        });
+      }
     }
 
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
@@ -522,10 +552,16 @@ export default function App() {
                 visibleMessages.map((msg, idx) => (
                   <div 
                     key={idx}
-                    className={`flex flex-col max-w-[85%] mb-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                    className={`group relative flex flex-col max-w-[85%] mb-3 px-3 py-2 rounded-lg text-sm transition-colors ${
                       msg.fromMe ? `self-end ${skinStyles.msgFromMe}` : `self-start ${skinStyles.msgFromThem}`
                     }`}
                   >
+                    {/* Reaction Popup Trigger */}
+                    <div className={`absolute ${msg.fromMe ? 'top-0 right-full mr-2' : 'top-0 left-full ml-2'} opacity-0 group-hover:opacity-100 transition-opacity bg-[#2a2a2a] rounded-full flex px-2 py-1 shadow-2xl border border-white/10 z-20`}>
+                      {['👍', '❤️', '😂', '😮', '😢', '🙏'].map(emoji => (
+                        <button key={emoji} onClick={() => window.electronAPI.reactToMessage(msg.id, emoji)} className="hover:scale-125 transition-transform px-1 text-base">{emoji}</button>
+                      ))}
+                    </div>
                     {!msg.fromMe && msg.author && (
                       <span className="text-xs opacity-50 mb-1">{msg.author}</span>
                     )}
@@ -559,6 +595,16 @@ export default function App() {
                     )}
                     
                     {msg.body && <span className="whitespace-pre-wrap break-words"><Linkify text={msg.body} /></span>}
+                    
+                    {msg.reactions && msg.reactions.length > 0 && (
+                      <div className={`flex flex-wrap mt-1 -mb-2 space-x-1 ${msg.fromMe ? 'justify-end' : 'justify-start'}`}>
+                        {msg.reactions.map((r: any, rIdx: number) => (
+                          <div key={rIdx} className="bg-black/20 rounded-full px-1.5 py-0.5 text-[10px] flex items-center shadow-sm backdrop-blur-sm border border-white/10 relative z-10">
+                            {r.reaction} {r.aggregate > 1 && <span className="ml-1 opacity-80">{r.aggregate}</span>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                     
                     <div className={`flex items-center justify-end mt-1 space-x-1 ${msg.fromMe ? 'opacity-80' : 'opacity-40'}`}>
                       <span className="text-[10px]">{new Date(msg.timestamp * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>

@@ -147,6 +147,16 @@ function setupWhatsApp() {
     }
   });
 
+  whatsappClient.on('message_reaction', async (reaction) => {
+    if (mainWindow) {
+      mainWindow.webContents.send('whatsapp-message-reaction', {
+        messageId: reaction.msgId._serialized,
+        reaction: reaction.reaction,
+        senderId: reaction.senderId,
+      });
+    }
+  });
+
   whatsappClient.initialize();
 }
 
@@ -226,6 +236,12 @@ ipcMain.handle('get-chat-messages', async (event, chatId) => {
             console.error('Failed to download history media', err);
           }
         }
+        let reactions = [];
+        if (msg.hasReaction) {
+          try {
+            reactions = await msg.getReactions() || [];
+          } catch (e) {}
+        }
         return {
           id: msg.id._serialized,
           body: msg.body,
@@ -238,6 +254,7 @@ ipcMain.handle('get-chat-messages', async (event, chatId) => {
           mediaData,
           mediaType,
           ack: msg.ack,
+          reactions: reactions.map(r => ({ aggregate: r.aggregate, reaction: r.id, senders: r.senders }))
         };
       }));
       return formattedMessages;
@@ -264,11 +281,20 @@ ipcMain.handle('select-and-send-file', async (event, chatId) => {
     try {
       const media = MessageMedia.fromFilePath(filePaths[0]);
       await whatsappClient.sendMessage(chatId, media);
-      return true;
-    } catch (e) {
-      console.error(e);
-      return false;
+    } catch (err) {
+      console.error('Failed to send file:', err);
     }
   }
-  return false;
+});
+
+ipcMain.handle('react-to-message', async (event, messageId, emoji) => {
+  if (!whatsappClient) return;
+  try {
+    const msg = await whatsappClient.getMessageById(messageId);
+    if (msg) {
+      await msg.react(emoji);
+    }
+  } catch (err) {
+    console.error('Failed to react:', err);
+  }
 });

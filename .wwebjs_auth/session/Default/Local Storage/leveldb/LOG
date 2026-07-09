@@ -1,3 +1,6 @@
-2026/07/10-01:50:39.580 202e21d Reusing MANIFEST /Users/lakshyagupta/.gemini/antigravity/scratch/stealth-chat/.wwebjs_auth/session/Default/Local Storage/leveldb/MANIFEST-000001
-2026/07/10-01:50:39.582 202e21d Recovering log #7
-2026/07/10-01:50:39.583 202e21d Reusing old log /Users/lakshyagupta/.gemini/antigravity/scratch/stealth-chat/.wwebjs_auth/session/Default/Local Storage/leveldb/000007.log 
+2026/07/10-02:04:39.210 2030d86 Reusing MANIFEST /Users/lakshyagupta/.gemini/antigravity/scratch/stealth-chat/.wwebjs_auth/session/Default/Local Storage/leveldb/MANIFEST-000001
+2026/07/10-02:04:39.212 2030d86 Recovering log #7
+2026/07/10-02:04:39.213 2030d86 Reusing old log /Users/lakshyagupta/.gemini/antigravity/scratch/stealth-chat/.wwebjs_auth/session/Default/Local Storage/leveldb/000007.log 
+2026/07/10-02:04:52.109 2030d89 Level-0 table #11: started
+2026/07/10-02:04:52.113 2030d89 Level-0 table #11: 14338 bytes OK
+2026/07/10-02:04:52.117 2030d89 Delete type=0 #7
