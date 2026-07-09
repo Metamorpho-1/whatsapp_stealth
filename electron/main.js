@@ -60,8 +60,10 @@ function createWindow() {
 }
 
 function registerShortcuts() {
+  const shortcutKey = process.platform === 'darwin' ? 'Option+Space' : 'Alt+Space';
+  
   // Global hotkey to toggle window
-  globalShortcut.register('Option+Space', () => {
+  globalShortcut.register(shortcutKey, () => {
     if (mainWindow.isVisible()) {
       mainWindow.hide();
     } else {

@@ -27,6 +27,66 @@ const Linkify = ({ text }: { text: string }) => {
   );
 };
 
+const PanicTerminal = () => {
+  const [lines, setLines] = useState<string[]>([]);
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const fakeLogs = [
+      "kernel: System Diagnostics Triggered.",
+      "[  OK  ] Started Thermal Daemon Service.",
+      "[  OK  ] Started Authorization Manager.",
+      "[  OK  ] Started Network Time Synchronization.",
+      "[  OK  ] Reached target System Initialization.",
+      "Compiling dependencies...",
+      "Warning: module 'stealth' has no exported member 'Panic'",
+      "make[1]: Entering directory '/usr/src/linux-headers-6.8.0'",
+      "  CC [M]  drivers/net/wireless/intel/iwlwifi/pcie/trans.o",
+      "  CC [M]  drivers/gpu/drm/amd/amdgpu/amdgpu_device.o",
+      "  LD [M]  fs/btrfs/btrfs.o",
+      "npm WARN deprecated request@2.88.2: request has been deprecated",
+      "Building native addons...",
+      "node-gyp rebuild",
+      "CXX(target) Release/obj.target/node_sqlite3/src/database.o",
+      "SOLINK_MODULE(target) Release/node_sqlite3.node",
+      "Done building native addons",
+      "Optimizing build assets...",
+      "Asset sizes: main.js (2.4MB) -> main.js.gz (800KB)",
+      "System fully verified. No anomalies detected."
+    ];
+
+    let currentIndex = 0;
+    const interval = setInterval(() => {
+      if (currentIndex < fakeLogs.length) {
+        setLines(prev => [...prev, fakeLogs[currentIndex]]);
+        currentIndex++;
+        setProgress(Math.floor((currentIndex / fakeLogs.length) * 100));
+      } else {
+        clearInterval(interval);
+      }
+    }, 150);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="flex flex-col w-screen h-screen bg-[#1e1e1e] p-4 font-mono text-[#00ff00] text-xs overflow-hidden">
+      <div className="flex flex-col flex-1 overflow-y-hidden justify-end">
+        {lines.map((line, i) => (
+          <div key={i} className={line.includes('Warning') || line.includes('WARN') ? 'text-yellow-500' : (line.includes('error') ? 'text-red-500' : '')}>
+            {line}
+          </div>
+        ))}
+      </div>
+      <div className="mt-4 pt-2 border-t border-[#333] flex items-center">
+        <span className="mr-2">Building target</span>
+        <span>[{'='.repeat(Math.floor(progress / 5))}{' '.repeat(20 - Math.floor(progress / 5))}]</span>
+        <span className="ml-2">{progress}%</span>
+      </div>
+    </div>
+  );
+};
+
 export default function App() {
   const [input, setInput] = useState('');
   const [qr, setQr] = useState<string | null>(null);
@@ -285,18 +345,7 @@ export default function App() {
   }[skin];
 
   if (panicMode) {
-    return (
-      <div className="flex flex-col w-screen h-screen bg-[#1e1e1e] p-4 font-mono text-[#00ff00] text-xs overflow-hidden">
-        <div className="mb-2 opacity-50">kernel: System Diagnostics Triggered.</div>
-        <div>[  OK  ] Started Thermal Daemon Service.</div>
-        <div>[  OK  ] Started Authorization Manager.</div>
-        <div>[  OK  ] Started Network Time Synchronization.</div>
-        <div>[  OK  ] Reached target System Initialization.</div>
-        <div className="mt-2 text-[#d4d4d4]">Compiling dependencies...</div>
-        <div className="text-yellow-500">Warning: module 'stealth' has no exported member 'Panic'</div>
-        <div className="mt-4 animate-pulse">Building target [=================>   ] 85%</div>
-      </div>
-    );
+    return <PanicTerminal />;
   }
 
   return (
@@ -387,7 +436,7 @@ export default function App() {
         )}
 
         {/* Dynamic Area */}
-        <div className="flex flex-col p-2 overflow-y-auto custom-scrollbar flex-1 relative z-10">
+        <div className="flex flex-col p-2 overflow-y-auto scroll-smooth custom-scrollbar flex-1 min-h-0 relative z-10">
           
           {!isReady && !qr && (
             <div className={`flex items-center px-3 py-2 text-sm opacity-60`}>
@@ -440,7 +489,7 @@ export default function App() {
 
           {/* Active Chat Messages */}
           {isReady && selectedChat && (
-            <div className="flex flex-col justify-end min-h-full pb-4">
+            <div className="flex flex-col pb-4 mt-auto">
               {visibleMessages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center opacity-40 p-8 h-full">
                   <ShieldCheck className="w-8 h-8 mb-2 opacity-50" />
