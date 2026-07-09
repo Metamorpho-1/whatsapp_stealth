@@ -11,4 +11,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onWhatsAppQr: (callback) => ipcRenderer.on('whatsapp-qr', (_event, qr) => callback(qr)),
   onWhatsAppReady: (callback) => ipcRenderer.on('whatsapp-ready', () => callback()),
   onWhatsAppMessage: (callback) => ipcRenderer.on('whatsapp-message', (_event, msg) => callback(msg)),
+  onWhatsAppMessageAck: (callback) => ipcRenderer.on('whatsapp-message-ack', (_event, data) => callback(data)),
 });

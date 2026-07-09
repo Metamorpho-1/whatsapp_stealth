@@ -124,6 +124,7 @@ function setupWhatsApp() {
         hasMedia: message.hasMedia,
         mediaData,
         mediaType,
+        ack: message.ack,
       });
 
       // Secret Notification
@@ -134,6 +135,15 @@ function setupWhatsApp() {
           sound: true
         });
       }
+    }
+  });
+
+  whatsappClient.on('message_ack', (msg, ack) => {
+    if (mainWindow) {
+      mainWindow.webContents.send('whatsapp-message-ack', {
+        id: msg.id._serialized,
+        ack,
+      });
     }
   });
 
@@ -227,6 +237,7 @@ ipcMain.handle('get-chat-messages', async (event, chatId) => {
           hasMedia: msg.hasMedia,
           mediaData,
           mediaType,
+          ack: msg.ack,
         };
       }));
       return formattedMessages;

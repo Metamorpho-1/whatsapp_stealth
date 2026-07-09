@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, Terminal, MessageSquare, ShieldCheck, QrCode, ArrowLeft, Image as ImageIcon, SmilePlus, Sticker, Paperclip, Palette } from 'lucide-react';
+import { Search, Terminal, MessageSquare, ShieldCheck, QrCode, ArrowLeft, Image as ImageIcon, SmilePlus, Sticker, Paperclip, Palette, Check, CheckCheck, Clock } from 'lucide-react';
 import EmojiPicker, { Theme } from 'emoji-picker-react';
 
 const Linkify = ({ text }: { text: string }) => {
@@ -145,12 +145,30 @@ export default function App() {
         }
       });
 
-      window.electronAPI.onWhatsAppMessage((msg) => {
-        setMessages((prev) => {
-          if (prev.some(m => m.id === msg.id)) return prev;
-          return [...prev, msg];
+      window.electronAPI.onWhatsAppMessage((msg: any) => {
+        setChats(prev => {
+          const chatIdx = prev.findIndex(c => c.id === msg.from || c.id === msg.to);
+          if (chatIdx === -1) return prev;
+          const newChats = [...prev];
+          newChats[chatIdx] = {
+            ...newChats[chatIdx],
+            lastMessage: msg.body,
+            timestamp: msg.timestamp,
+            unreadCount: msg.fromMe ? 0 : newChats[chatIdx].unreadCount + 1,
+          };
+          return newChats.sort((a, b) => b.timestamp - a.timestamp);
         });
+
+        if (selectedChatRef.current && (msg.from === selectedChatRef.current.id || msg.to === selectedChatRef.current.id)) {
+          setMessages(prev => [...prev, msg]);
+        }
       });
+
+      if (window.electronAPI.onWhatsAppMessageAck) {
+        window.electronAPI.onWhatsAppMessageAck((data: { id: string, ack: number }) => {
+          setMessages(prev => prev.map(m => m.id === data.id ? { ...m, ack: data.ack } : m));
+        });
+      }
     }
 
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
@@ -541,6 +559,18 @@ export default function App() {
                     )}
                     
                     {msg.body && <span className="whitespace-pre-wrap break-words"><Linkify text={msg.body} /></span>}
+                    
+                    <div className={`flex items-center justify-end mt-1 space-x-1 ${msg.fromMe ? 'opacity-80' : 'opacity-40'}`}>
+                      <span className="text-[10px]">{new Date(msg.timestamp * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                      {msg.fromMe && (
+                        <span className="ml-1">
+                          {msg.ack === 0 || msg.ack === undefined ? <Clock className="w-3 h-3" /> :
+                           msg.ack === 1 ? <Check className="w-3 h-3" /> :
+                           msg.ack === 2 ? <CheckCheck className="w-3 h-3" /> :
+                           msg.ack === 3 ? <CheckCheck className="w-3 h-3 text-blue-500" /> : <Clock className="w-3 h-3" />}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 ))
               )}
