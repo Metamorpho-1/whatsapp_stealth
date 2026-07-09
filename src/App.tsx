@@ -102,6 +102,7 @@ export default function App() {
   
   const [skin, setSkin] = useState<'glass' | 'terminal' | 'notes' | 'ghost' | 'vscode' | 'slack' | 'excel' | 'notion'>('glass');
   const [panicMode, setPanicMode] = useState(false);
+  const [reactionPickerFor, setReactionPickerFor] = useState<string | null>(null);
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -557,11 +558,27 @@ export default function App() {
                     }`}
                   >
                     {/* Reaction Popup Trigger */}
-                    <div className={`absolute ${msg.fromMe ? 'top-0 right-full mr-2' : 'top-0 left-full ml-2'} opacity-0 group-hover:opacity-100 transition-opacity bg-[#2a2a2a] rounded-full flex px-2 py-1 shadow-2xl border border-white/10 z-20`}>
+                    <div className={`absolute -top-10 ${msg.fromMe ? 'right-0' : 'left-0'} opacity-0 group-hover:opacity-100 transition-opacity bg-[#2a2a2a] rounded-full flex items-center px-2 py-1 shadow-2xl border border-white/10 z-30`}>
                       {['👍', '❤️', '😂', '😮', '😢', '🙏'].map(emoji => (
                         <button key={emoji} onClick={() => window.electronAPI.reactToMessage(msg.id, emoji)} className="hover:scale-125 transition-transform px-1 text-base">{emoji}</button>
                       ))}
+                      <button onClick={() => setReactionPickerFor(reactionPickerFor === msg.id ? null : msg.id)} className="hover:scale-125 transition-transform px-1 text-sm opacity-50 hover:opacity-100 ml-1">+</button>
                     </div>
+
+                    {reactionPickerFor === msg.id && (
+                      <div className={`absolute -top-12 ${msg.fromMe ? 'right-0' : 'left-0'} z-50 shadow-2xl rounded-xl overflow-hidden border border-white/10 opacity-95`}>
+                        <EmojiPicker 
+                          theme={Theme.DARK} 
+                          emojiStyle={'native' as any} 
+                          lazyLoadEmojis={false}
+                          onEmojiClick={(emojiData) => {
+                            window.electronAPI.reactToMessage(msg.id, emojiData.emoji);
+                            setReactionPickerFor(null);
+                          }} 
+                        />
+                      </div>
+                    )}
+                    
                     {!msg.fromMe && msg.author && (
                       <span className="text-xs opacity-50 mb-1">{msg.author}</span>
                     )}
@@ -570,7 +587,7 @@ export default function App() {
                     {msg.hasMedia && msg.mediaData && (
                       <div className="mb-2 rounded overflow-hidden">
                         {msg.mediaType?.startsWith('image/') || msg.mediaType?.startsWith('video/') ? (
-                          <div className="relative group cursor-pointer" onClick={() => setLightbox({data: msg.mediaData, type: msg.mediaType})}>
+                          <div className="relative group/media cursor-pointer" onClick={() => setLightbox({data: msg.mediaData, type: msg.mediaType})}>
                             <img 
                               src={`data:${msg.mediaType};base64,${msg.mediaData}`} 
                               alt="Media" 
@@ -579,7 +596,7 @@ export default function App() {
                             {!msg.fromMe && msg.mediaType.includes('webp') && (
                               <button 
                                 onClick={(e) => { e.stopPropagation(); saveStickerToStash(msg.mediaData, msg.mediaType); }}
-                                className="absolute top-1 right-1 bg-black/60 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                                className="absolute top-1 right-1 bg-black/60 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover/media:opacity-100 transition-opacity"
                               >
                                 Save
                               </button>
