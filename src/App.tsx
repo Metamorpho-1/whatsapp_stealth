@@ -413,8 +413,13 @@ export default function App() {
 
         {/* Popovers */}
         {showEmoji && (
-          <div className="absolute top-[60px] right-4 z-30 shadow-2xl rounded-xl overflow-hidden border border-black/10 opacity-95">
-            <EmojiPicker theme={Theme.AUTO} onEmojiClick={(emojiData) => setInput(prev => prev + emojiData.emoji)} />
+          <div className="absolute top-[60px] right-4 z-30 shadow-2xl rounded-xl overflow-hidden border border-white/10 opacity-95">
+            <EmojiPicker 
+              theme={Theme.DARK} 
+              emojiStyle={'native' as any} 
+              lazyLoadEmojis={false}
+              onEmojiClick={(emojiData) => setInput(prev => prev + emojiData.emoji)} 
+            />
           </div>
         )}
 
